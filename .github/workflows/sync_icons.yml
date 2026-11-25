@@ -2,34 +2,75 @@ name: Generate Icons JSON
 
 on:
   push:
+    branches:
+      - main
     paths:
-      - 'icons/**.png'
+      - 'icons/**/*.[pP][nN][gG]'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4  # 更新到最新版本
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install jq
-      run: sudo apt-get install -y jq
+      - name: Generate icons.json
+        env:
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          python3 - <<'EOF'
+          import json
+          import os
+          from pathlib import Path
+          from urllib.parse import quote
 
-    - name: Generate icons.json
-      run: |
-        ICONS_JSON='{"name": "Emby图标库", "description": "GitHub: @cc63", "icons": []}'
-        for icon in icons/*.png; do
-          ICON_NAME=$(basename "$icon" .png)
-          ICON_URL="https://raw.githubusercontent.com/cc63/Emby/main/$icon"
-          ICONS_JSON=$(echo "$ICONS_JSON" | jq --arg name "$ICON_NAME" --arg url "$ICON_URL" '.icons += [{"name": $name, "url": $url}]')
-        done
-        echo "$ICONS_JSON" > icons.json
+          repo = os.environ["REPO"]
+          branch = os.environ["BRANCH"]
+          icons_dir = Path("icons")
 
-    - name: Commit and push changes
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add icons.json
-        git commit -m "Update icons.json" -a || echo "No changes to commit"
-        git push
+          icons = []
+          if icons_dir.exists():
+              png_files = sorted(
+                  p for p in icons_dir.rglob("*")
+                  if p.is_file() and p.suffix.lower() == ".png"
+              )
+              for path in png_files:
+                  rel_path = path.as_posix()
+                  encoded_path = quote(rel_path, safe="/")
+                  icons.append({
+                      "name": path.stem,
+                      "url": f"https://raw.githubusercontent.com/{repo}/{branch}/{encoded_path}",
+                  })
+
+          data = {
+              "name": "Emby图标库",
+              "description": "GitHub: @cc63",
+              "icons": icons,
+          }
+
+          with open("icons.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, ensure_ascii=False, indent=2)
+              f.write("\n")
+          EOF
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add icons.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update icons.json"
+            git push
+          fi
