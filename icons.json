@@ -1,10 +1,14 @@
 {
-  "name": "AI&Emby",
+  "name": "Emby图标库",
   "description": "GitHub: @cc63",
   "icons": [
     {
-      "name": "*",
-      "url": "https://raw.githubusercontent.com/cc63/Fileball/main/icons/*.png"
+      "name": "shiguang",
+      "url": "https://raw.githubusercontent.com/cc63/Emby/main/icons/shiguang.png"
+    },
+    {
+      "name": "wenjian",
+      "url": "https://raw.githubusercontent.com/cc63/Emby/main/icons/wenjian.png"
     }
   ]
 }
