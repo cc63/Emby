@@ -12,7 +12,7 @@
 ## 📦 **JSON地址**
 
 ```
-https://raw.githubusercontent.com/cc63/Fileball/main/icons.json
+https://raw.githubusercontent.com/cc63/Emby/main/icons.json
 ```
 
 ## 🎭 图标预览
